@@ -1,0 +1,5 @@
+/.DS_Store
+/.venv
+/elasticsearch-8.11.1
+/kibana-8.11.1
+/matplot.py
