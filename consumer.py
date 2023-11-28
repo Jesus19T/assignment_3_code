@@ -17,5 +17,4 @@ KafkaConsumer(consumer_timeout_ms=1000)
 
 consumer = KafkaConsumer()
 
-consumer1 = KafkaConsumer('news_query',\
-                          bootstrap_servers='localhost:9092')
+# consumer1 = KafkaConsumer('news_query', bootstrap_servers='localhost:9092')
