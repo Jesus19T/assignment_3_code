@@ -12,6 +12,9 @@ news_api = NewsApiClient(api_key='aab12b45a6d24541aee56741b679aead')
 #'economic policy in dallas'
 #'premier league'
 for i in range(4):
+    #sleep for 15 minute intervals
+    time.sleep(900) 
+
     data = news_api.get_everything(q='premier league',\
                                     from_param='2023-11-26',\
                                     language='en')
@@ -63,6 +66,3 @@ for i in range(4):
     producer.flush()
 
     producer = KafkaProducer(retries=5)
-
-    # time.sleep(480)
-    time.sleep(900)
