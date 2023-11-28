@@ -45,6 +45,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import explode, udf, col
 from pyspark.sql.functions import split
 from kafka import KafkaProducer
+import json
+import pyspark 
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
@@ -74,23 +76,8 @@ if __name__ == "__main__":
         .selectExpr("CAST(value AS STRING)")
     
     nlp = spacy.load("en_core_web_sm")
-    # text= nlp(lines.value)
-    # named_entities = [named_entiy.text for named_entiy in text.ents]
-    print()
-    print("PRINTING LINES VALUE")
-    print(type(lines))
-    print(lines.columns)
-    print(lines.dtypes)
-    print()
 
-    # @udf
     def extract_entities(data):
-        # spacy_model = get_spacy_model()
-        # docs = spacy_model.pipe(documents)
-        # tokens = [[tok.lemma_ for tok in doc if not tok.is_stop and tok.text]
-        #         for doc in docs]
-        # tokens_series = pd.Series(tokens)
-
         text = nlp(data)
         named_entities = [named_entiy.text for named_entiy in text.ents]
         return named_entities
@@ -98,25 +85,11 @@ if __name__ == "__main__":
     extract_entities_UDF = udf(lambda z: extract_entities(z))
     entities = lines.select(extract_entities_UDF(lines.value).alias('value'))
 
-    # print()
-    # print("PRINTING LINES VALUE")
-    # print(type(entities))
-    # print(entities.columns)
-    # print(entities.dtypes)
-    # print(entities)
-    # print()
-
     # Split the lines into words
     words = entities.select(
         # explode turns each item in an array into a separate row
         explode(split(entities.value, ' ')).alias('word')
     )
-
-
-    # words = lines.select(
-    #     # explode turns each item in an array into a separate row
-    #     (extract_entities_UDF(lines.value)).alias('values').explode(split(lines.value, ' ')).alias('word')
-    # )
 
     # Generate running word count
     wordCounts = words.groupBy('word').count().orderBy(col("count").desc()).limit(10)
@@ -127,21 +100,19 @@ if __name__ == "__main__":
         .outputMode('complete')\
         .format('console')\
         .start()
-
     
-
+    query.awaitTermination()
+    
+    # write entity count to kafka
     # query_2 = wordCounts \
     #         .writeStream \
     #         .outputMode('complete')\
-    #         .format("kafka") \
-    #         .option("kafka.bootstrap.servers", bootstrapServers) \
-    #         .option("topic", "news_topic2") \
+    #         .foreach(send_2_kafka)
     #         .start()
+
+    # Function to push Entity counts to kafka_topic_2.
+    # def send_2_kafka(row: pyspark.Row):
+    #     elk_producer = KafkaProducer(bootstrap_servers=bootstrapServers)
+    #     value = json.dumps(row.asDict())
+    #     elk_producer.send("kafka_topic2", value=value.encode())
     
-    # producer = KafkaProducer(bootstrap_servers=['localhost:9092'])
-    # producer.send('news_topic2', value=wordCounts)
-    # producer.flush()
-    # producer = KafkaProducer(retries=5)
-    
-    query.awaitTermination()
-    # query_2.awaitTermination()
